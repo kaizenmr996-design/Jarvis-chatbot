@@ -133,4 +133,27 @@
     });
   </script>
 </body>
+</html>      };
+
+      xhr.onerror = function() {
+        typing.remove();
+        addMessage("❌ Network error. Switch to mobile data or try another browser.", "bot");
+      };
+
+      xhr.send(postData);
+    }
+
+    sendBtn.addEventListener("click", function() {
+      const q = input.value.trim();
+      if (q) {
+        askJarvis(q);
+        input.value = "";
+      }
+    });
+
+    input.addEventListener("keypress", function(e) {
+      if (e.key === "Enter") sendBtn.click();
+    });
+  </script>
+</body>
 </html>
