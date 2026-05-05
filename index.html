@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jarvis - OpenAI</title>
+  <title>Jarvis – AI Assistant</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{background:#0a0a0a;color:#eee;font-family:'Segoe UI',sans-serif;display:flex;justify-content:center;align-items:center;height:100vh}
@@ -20,7 +20,7 @@
 </head>
 <body>
   <div class="chat">
-    <div class="header">⚡ J.A.R.V.I.S. (OpenAI)</div>
+    <div class="header">⚡ J.A.R.V.I.S.</div>
     <div class="messages" id="msgs">
       <div class="msg bot">Greetings, sir. I'm Jarvis. How may I assist?</div>
     </div>
@@ -30,8 +30,8 @@
     </div>
   </div>
   <script>
-    // 🔐 PUT YOUR REAL OPENAI KEY HERE
-    const OPENAI_KEY = "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";
+    // 🔐 PASTE YOUR REAL OPENAI KEY HERE
+    const OPENAI_KEY = "sk-REPLACE_WITH_YOUR_ACTUAL_OPENAI_SECRET_KEY";
     const API_URL = "https://api.openai.com/v1/chat/completions";
 
     const msgs = document.getElementById("msgs");
@@ -40,7 +40,7 @@
 
     const systemMessage = {
       role: "system",
-      content: "You are Jarvis, a sophisticated AI assistant. Be witty, helpful, and sometimes call the user 'sir'. Keep replies concise."
+      content: "You are Jarvis, a sophisticated AI assistant. Be witty, helpful, and occasionally call the user 'sir'. Keep replies concise."
     };
 
     function addMessage(text, role) {
@@ -52,14 +52,14 @@
       return div;
     }
 
-    // Check key on load
+    // Quick key validation
     window.onload = function() {
-      if (OPENAI_KEY === "sk-REPLACE_WITH_YOUR_ACTUAL_OPENAI_SECRET_KEY") {
-        addMessage("🔴 KEY IS STILL THE PLACEHOLDER! Edit the file and insert your real key.", "bot");
+      if (OPENAI_KEY === "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") {
+        addMessage("⚠️ Please replace the placeholder API key.", "bot");
       } else if (!OPENAI_KEY.startsWith("sk-")) {
-        addMessage("⚠️ Key doesn't start with 'sk-'. Might be invalid.", "bot");
+        addMessage("⚠️ API key might be invalid (should start with sk-).", "bot");
       } else {
-        addMessage("✅ Key ready. Type a message.", "bot");
+        addMessage("✅ Ready, sir. Type your message.", "bot");
       }
     };
 
@@ -67,18 +67,6 @@
       addMessage(question, "user");
       const typing = addMessage("...", "bot");
 
-      // Build POST body
-      const postData = JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [
-          systemMessage,
-          { role: "user", content: question }
-        ],
-        temperature: 0.7,
-        max_tokens: 300
-      });
-
-      // Use XMLHttpRequest (works even where fetch is blocked)
       const xhr = new XMLHttpRequest();
       xhr.open("POST", API_URL, true);
       xhr.setRequestHeader("Content-Type", "application/json");
@@ -93,24 +81,50 @@
               if (data.choices && data.choices[0]?.message?.content) {
                 addMessage(data.choices[0].message.content.trim(), "bot");
               } else {
-                addMessage("❌ Unexpected response", "bot");
+                addMessage("❌ Unexpected response format.", "bot");
               }
             } catch (e) {
-              addMessage("❌ Couldn't parse response", "bot");
+              addMessage("❌ Error reading response.", "bot");
             }
+          } else if (xhr.status === 429) {
+            addMessage("❌ Too many requests. Please wait a moment.", "bot");
+          } else if (xhr.status === 401) {
+            addMessage("❌ Invalid API key. Check your key.", "bot");
+          } else if (xhr.status === 0) {
+            addMessage("❌ Network blocked. Try mobile data or a different browser.", "bot");
           } else {
-            // Show exact error from OpenAI
-            let errorMsg = "Error " + xhr.status;
-            try {
-              const errData = JSON.parse(xhr.responseText);
-              if (errData.error && errData.error.message) {
-                errorMsg += ": " + errData.error.message;
-              }
-            } catch(e) {}
-            addMessage("❌ " + errorMsg, "bot");
+            addMessage("❌ Error " + xhr.status + ". Please try again.", "bot");
           }
         }
       };
+
+      xhr.onerror = function() {
+        typing.remove();
+        addMessage("❌ Network error. Switch to mobile data or try another browser.", "bot");
+      };
+
+      xhr.send(JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [systemMessage, { role: "user", content: question }],
+        temperature: 0.7,
+        max_tokens: 300
+      }));
+    }
+
+    sendBtn.addEventListener("click", function() {
+      const q = input.value.trim();
+      if (q) {
+        askJarvis(q);
+        input.value = "";
+      }
+    });
+
+    input.addEventListener("keypress", function(e) {
+      if (e.key === "Enter") sendBtn.click();
+    });
+  </script>
+</body>
+</html>      };
 
       xhr.onerror = function() {
         typing.remove();
