@@ -30,15 +30,15 @@
     </div>
   </div>
   <script>
-    // ⚠️ REPLACE WITH YOUR REAL OPENAI API KEY (starts with sk-...)
-    const OPENAI_KEY =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
+    // 1. PUT YOUR REAL OPENAI KEY HERE (replace the entire text inside the quotes)
+    const OPENAI_KEY = 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
     const API_URL = "https://api.openai.com/v1/chat/completions";
 
     const msgs = document.getElementById("msgs");
     const input = document.getElementById("input");
     const sendBtn = document.getElementById("send");
 
-    // Jarvis persona
+    // Jarvis personality
     const systemMessage = {
       role: "system",
       content: "You are Jarvis, a sophisticated AI assistant. Be witty, helpful, and sometimes call the user 'sir'. Keep replies concise."
@@ -53,6 +53,17 @@
       return div;
     }
 
+    // Check key on page load
+    window.onload = function() {
+      if (OPENAI_KEY === "sk-REPLACE_WITH_YOUR_ACTUAL_OPENAI_SECRET_KEY") {
+        addMessage("⚠️ Please replace the placeholder API key in index.html", "bot");
+      } else if (!OPENAI_KEY.startsWith("sk-")) {
+        addMessage("⚠️ API key might be invalid (should start with sk-).", "bot");
+      } else {
+        addMessage("✅ API key set. I'm ready, sir.", "bot");
+      }
+    };
+
     async function askJarvis(question) {
       addMessage(question, "user");
       const typing = addMessage("...", "bot");
@@ -64,7 +75,7 @@
             "Authorization": `Bearer ${OPENAI_KEY}`
           },
           body: JSON.stringify({
-            model: "gpt-3.5-turbo",  // cheapest / free credits
+            model: "gpt-3.5-turbo",
             messages: [
               systemMessage,
               { role: "user", content: question }
@@ -78,21 +89,25 @@
         if (data.choices && data.choices[0]?.message?.content) {
           addMessage(data.choices[0].message.content.trim(), "bot");
         } else if (data.error) {
-          addMessage("Error: " + data.error.message, "bot");
+          addMessage("❌ " + data.error.message, "bot");
         } else {
-          addMessage("I couldn't process that. Please try again.", "bot");
+          addMessage("❌ Unexpected response. Check console.", "bot");
         }
       } catch (err) {
         typing.remove();
-        addMessage("Network error. Check your connection or API key.", "bot");
+        addMessage("❌ Network error. Check connection or API key.", "bot");
       }
     }
 
-    sendBtn.addEventListener("click", () => {
+    sendBtn.addEventListener("click", function() {
       const q = input.value.trim();
-      if (q) { askJarvis(q); input.value = ""; }
+      if (q) {
+        askJarvis(q);
+        input.value = "";
+      }
     });
-    input.addEventListener("keypress", (e) => {
+
+    input.addEventListener("keypress", function(e) {
       if (e.key === "Enter") sendBtn.click();
     });
   </script>
