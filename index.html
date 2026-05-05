@@ -30,102 +30,107 @@
     </div>
   </div>
   <script>
-    // 🧪 DEBUG MODE – alerts will pop up
-    try {
+    // 🔐 PUT YOUR REAL OPENAI KEY HERE
+    const OPENAI_KEY = "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";
+    const API_URL = "https://api.openai.com/v1/chat/completions";
 
-      // ⚠️ REPLACE THIS WITH YOUR REAL OPENAI KEY
-      const OPENAI_KEY = "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";
-      const API_URL = "https://api.openai.com/v1/chat/completions";
+    const msgs = document.getElementById("msgs");
+    const input = document.getElementById("input");
+    const sendBtn = document.getElementById("send");
 
-      const msgs = document.getElementById("msgs");
-      const input = document.getElementById("input");
-      const sendBtn = document.getElementById("send");
+    const systemMessage = {
+      role: "system",
+      content: "You are Jarvis, a sophisticated AI assistant. Be witty, helpful, and sometimes call the user 'sir'. Keep replies concise."
+    };
 
-      const systemMessage = {
-        role: "system",
-        content: "You are Jarvis, a sophisticated AI assistant. Be witty, helpful, and sometimes call the user 'sir'. Keep replies concise."
+    function addMessage(text, role) {
+      const div = document.createElement("div");
+      div.className = "msg " + role;
+      div.textContent = text;
+      msgs.appendChild(div);
+      msgs.scrollTop = msgs.scrollHeight;
+      return div;
+    }
+
+    // Check key on load
+    window.onload = function() {
+      if (OPENAI_KEY === "sk-REPLACE_WITH_YOUR_ACTUAL_OPENAI_SECRET_KEY") {
+        addMessage("🔴 KEY IS STILL THE PLACEHOLDER! Edit the file and insert your real key.", "bot");
+      } else if (!OPENAI_KEY.startsWith("sk-")) {
+        addMessage("⚠️ Key doesn't start with 'sk-'. Might be invalid.", "bot");
+      } else {
+        addMessage("✅ Key ready. Type a message.", "bot");
+      }
+    };
+
+    function askJarvis(question) {
+      addMessage(question, "user");
+      const typing = addMessage("...", "bot");
+
+      // Build POST body
+      const postData = JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [
+          systemMessage,
+          { role: "user", content: question }
+        ],
+        temperature: 0.7,
+        max_tokens: 300
+      });
+
+      // Use XMLHttpRequest (works even where fetch is blocked)
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", API_URL, true);
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.setRequestHeader("Authorization", "Bearer " + OPENAI_KEY);
+
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          typing.remove();
+          if (xhr.status === 200) {
+            try {
+              const data = JSON.parse(xhr.responseText);
+              if (data.choices && data.choices[0]?.message?.content) {
+                addMessage(data.choices[0].message.content.trim(), "bot");
+              } else {
+                addMessage("❌ Unexpected response", "bot");
+              }
+            } catch (e) {
+              addMessage("❌ Couldn't parse response", "bot");
+            }
+          } else {
+            // Show exact error from OpenAI
+            let errorMsg = "Error " + xhr.status;
+            try {
+              const errData = JSON.parse(xhr.responseText);
+              if (errData.error && errData.error.message) {
+                errorMsg += ": " + errData.error.message;
+              }
+            } catch(e) {}
+            addMessage("❌ " + errorMsg, "bot");
+          }
+        }
       };
 
-      function addMessage(text, role) {
-        const div = document.createElement("div");
-        div.className = "msg " + role;
-        div.textContent = text;
-        msgs.appendChild(div);
-        msgs.scrollTop = msgs.scrollHeight;
-        return div;
-      }
+      xhr.onerror = function() {
+        typing.remove();
+        addMessage("❌ Network error. Switch to mobile data or try another browser.", "bot");
+      };
 
-      // Check key immediately
-      if (OPENAI_KEY === "sk-REPLACE_WITH_YOUR_ACTUAL_OPENAI_SECRET_KEY") {
-        addMessage("🔴 KEY IS STILL THE PLACEHOLDER. Edit index.html and insert your real key.", "bot");
-      } else {
-        addMessage("✅ Key ready. Try typing a message.", "bot");
-      }
-
-      async function askJarvis(question) {
-        addMessage(question, "user");
-        const typing = addMessage("...", "bot");
-        try {
-          const response = await fetch(API_URL, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": "Bearer " + OPENAI_KEY
-            },
-            body: JSON.stringify({
-              model: "gpt-3.5-turbo",
-              messages: [
-                systemMessage,
-                { role: "user", content: question }
-              ],
-              temperature: 0.7,
-              max_tokens: 300
-            })
-          });
-          const data = await response.json();
-          typing.remove();
-
-          // 🧪 DEBUG: Show full API response
-          alert("API Response:\n" + JSON.stringify(data, null, 2));
-
-          if (data.choices && data.choices[0]?.message?.content) {
-            addMessage(data.choices[0].message.content.trim(), "bot");
-          } else if (data.error) {
-            addMessage("❌ " + data.error.message, "bot");
-          } else {
-            addMessage("❌ Unexpected response (see popup).", "bot");
-          }
-        } catch (err) {
-          typing.remove();
-          addMessage("❌ Fetch error: " + err.message, "bot");
-          alert("Fetch error: " + err.message);
-        }
-      }
-
-      // Attach click handler
-      sendBtn.addEventListener("click", function() {
-        alert("Button clicked!");  // DEBUG
-        const q = input.value.trim();
-        if (q) {
-          askJarvis(q);
-          input.value = "";
-        }
-      });
-
-      // Attach Enter key handler
-      input.addEventListener("keypress", function(e) {
-        if (e.key === "Enter") {
-          alert("Enter pressed!");  // DEBUG
-          sendBtn.click();
-        }
-      });
-
-      // Confirm that the button was found
-      alert("Send button found: " + (sendBtn ? "YES" : "NO"));
-
-    } catch (error) {
-      alert("SCRIPT ERROR: " + error.message);
+      xhr.send(postData);
     }
+
+    sendBtn.addEventListener("click", function() {
+      const q = input.value.trim();
+      if (q) {
+        askJarvis(q);
+        input.value = "";
+      }
+    });
+
+    input.addEventListener("keypress", function(e) {
+      if (e.key === "Enter") sendBtn.click();
+    });
   </script>
 </body>
 </html>
